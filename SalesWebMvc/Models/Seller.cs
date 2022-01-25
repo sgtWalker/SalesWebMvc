@@ -14,6 +14,7 @@ namespace SalesWebMvc.Models
         public double BaseSalary { get; set; }
         //associação (Seller possui 1 Department)
         public Department Department { get; set; }
+        public int DepartmentId { get; set; }
         //associação (Seller possui várias SalesRecord)
         public ICollection<SalesRecord> Sales { get; set; } = new List<SalesRecord>();
         #endregion

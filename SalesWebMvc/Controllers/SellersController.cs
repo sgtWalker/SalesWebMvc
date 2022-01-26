@@ -5,6 +5,7 @@ using SalesWebMvc.Services;
 using SalesWebMvc.Services.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,6 +13,9 @@ namespace SalesWebMvc.Controllers
 {
     public class SellersController : Controller
     {
+        private const string DEFAULT_MESSAGE_NOT_FOUND = "Seller not found";
+        private const string DEFAULT_MESSAGE_NOT_PROVIDED = "The SellerId not provided";
+        private const string DEFAULT_MESSAGE_NOT_EQUALS = "The SellerId not equals the Seller in object";
         private readonly SellerService _sellerService;
         private readonly DepartmentService _departmentService;
 
@@ -71,7 +75,7 @@ namespace SalesWebMvc.Controllers
         {
             if (id != seller.Id)
             {
-                return BadRequest();
+                return RedirectToAction(nameof(Error), new { message = DEFAULT_MESSAGE_NOT_EQUALS });
             }
 
             try
@@ -81,11 +85,11 @@ namespace SalesWebMvc.Controllers
             }
             catch (NotFoundException ex)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = $"{nameof(NotFoundException)}: {ex.Message}"});
             }
             catch (DbConcurrencyException ex)
             {
-                return BadRequest();
+                return RedirectToAction(nameof(Error), new { message = $"{nameof(DbConcurrencyException)}: {ex.Message}" });
             }
         }
 
@@ -93,13 +97,13 @@ namespace SalesWebMvc.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = DEFAULT_MESSAGE_NOT_PROVIDED });
             }
 
             var seller = _sellerService.FindById(id.Value);
             if (seller == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = DEFAULT_MESSAGE_NOT_FOUND });
             }
 
             if (IsEdit)
@@ -113,6 +117,17 @@ namespace SalesWebMvc.Controllers
             {
                 return View(seller);
             }
+        }
+
+        public IActionResult Error(string message)
+        {
+            var viewModel = new ErrorViewModel
+            {
+                Message = message,
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            };
+
+            return View(viewModel);
         }
     }
 }

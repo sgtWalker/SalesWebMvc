@@ -2,6 +2,7 @@
 using SalesWebMvc.Models;
 using SalesWebMvc.Models.ViewModels;
 using SalesWebMvc.Services;
+using SalesWebMvc.Services.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,7 +60,36 @@ namespace SalesWebMvc.Controllers
             return SearchSeller(id);
         }
 
-        private IActionResult SearchSeller(int? id)
+        public IActionResult Edit(int? id)
+        {
+            return SearchSeller(id, true);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, Seller seller)
+        {
+            if (id != seller.Id)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                _sellerService.Update(seller);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound();
+            }
+            catch (DbConcurrencyException ex)
+            {
+                return BadRequest();
+            }
+        }
+
+        private IActionResult SearchSeller(int? id, bool IsEdit = false)
         {
             if (id == null)
             {
@@ -72,7 +102,17 @@ namespace SalesWebMvc.Controllers
                 return NotFound();
             }
 
-            return View(seller);
+            if (IsEdit)
+            {
+                List<Department> departments = _departmentService.FindAll();
+                SellerFormViewModel viewModel = new SellerFormViewModel { Seller = seller, Departments = departments };
+
+                return View(viewModel);
+            }
+            else
+            {
+                return View(seller);
+            }
         }
     }
 }
